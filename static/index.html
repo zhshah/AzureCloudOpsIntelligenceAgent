@@ -228,24 +228,93 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
+        /* Table wrapper for horizontal scrolling */
+        .message.assistant .message-content .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
         .message.assistant .message-content table {
             border-collapse: collapse;
             width: 100%;
-            margin: 10px 0;
-            font-size: 14px;
+            margin: 0;
+            font-size: 13px;
+            min-width: 600px; /* Minimum width to maintain readability */
         }
 
         .message.assistant .message-content th,
         .message.assistant .message-content td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px 12px;
             text-align: left;
+            word-wrap: break-word;
+            word-break: break-word;
+            max-width: 250px; /* Limit column width */
+            overflow-wrap: break-word;
         }
 
         .message.assistant .message-content th {
             background-color: #0078d4;
             color: white;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        /* Responsive columns - specific column widths */
+        .message.assistant .message-content td:first-child,
+        .message.assistant .message-content th:first-child {
+            min-width: 150px;
+            max-width: 200px;
+        }
+
+        /* Tags column - allow wrapping */
+        .message.assistant .message-content td:last-child,
+        .message.assistant .message-content th:last-child {
+            min-width: 180px;
+            max-width: 300px;
+            white-space: normal;
+        }
+
+        /* Cost column - keep narrow */
+        .message.assistant .message-content td:nth-child(5),
+        .message.assistant .message-content th:nth-child(5) {
+            min-width: 80px;
+            max-width: 100px;
+            text-align: right;
+        }
+
+        /* Alternating row colors for better readability */
+        .message.assistant .message-content tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .message.assistant .message-content tr:hover {
+            background-color: #e7f3ff;
+        }
+
+        /* Scrollbar styling for table wrapper */
+        .message.assistant .message-content .table-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .message.assistant .message-content .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .message.assistant .message-content .table-wrapper::-webkit-scrollbar-thumb {
+            background: #0078d4;
+            border-radius: 4px;
+        }
+
+        .message.assistant .message-content .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #005a9e;
         }
 
         .message.assistant .message-content tr:nth-child(even) {
@@ -778,7 +847,7 @@
                 if (line.startsWith('|') && line.endsWith('|')) {
                     if (!inTable) {
                         inTable = true;
-                        tableHtml = '<table>';
+                        tableHtml = '<div class="table-wrapper"><table>';
                     }
                     
                     // Skip separator lines
@@ -787,7 +856,7 @@
                     }
                     
                     const cells = line.split('|').filter(cell => cell.trim());
-                    const isHeader = i === 0 || (result === '' && tableHtml === '<table>');
+                    const isHeader = i === 0 || (result === '' && tableHtml === '<div class="table-wrapper"><table>');
                     const tag = isHeader ? 'th' : 'td';
                     
                     tableHtml += '<tr>';
@@ -797,7 +866,7 @@
                     tableHtml += '</tr>';
                 } else {
                     if (inTable) {
-                        tableHtml += '</table>';
+                        tableHtml += '</table></div>';
                         result += tableHtml + '<br>';
                         tableHtml = '';
                         inTable = false;
@@ -807,7 +876,7 @@
             }
             
             if (inTable) {
-                tableHtml += '</table>';
+                tableHtml += '</table></div>';
                 result += tableHtml;
             }
             

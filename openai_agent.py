@@ -224,6 +224,119 @@ class OpenAIAgent:
                     "type": "object",
                     "properties": {}
                 }
+            },
+            {
+                "name": "get_resources_by_tag",
+                "description": "Get all resources filtered by a specific tag name and value. Use this when user asks to filter resources by tags, find resources with specific tags, or list resources with Environment/Owner/CostCenter tags. Returns resource name, type, resource group, location, tags, and resource ID.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "tag_name": {
+                            "type": "string",
+                            "description": "Tag name to filter by (e.g., 'Environment', 'CostCenter', 'Owner')"
+                        },
+                        "tag_value": {
+                            "type": "string",
+                            "description": "Tag value to filter by (e.g., 'Sandbox', 'Production', 'Development'). If not provided, returns all resources with the tag regardless of value."
+                        }
+                    },
+                    "required": ["tag_name"]
+                }
+            },
+            {
+                "name": "get_resources_by_tag_with_costs",
+                "description": "Get resources filtered by tag with their associated costs for a specified period. Use this when user asks for resources with specific tags AND their costs. Returns comprehensive data including resource details, tags, and cost breakdown.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "tag_name": {
+                            "type": "string",
+                            "description": "Tag name to filter by (e.g., 'Environment', 'CostCenter')"
+                        },
+                        "tag_value": {
+                            "type": "string",
+                            "description": "Tag value to filter by (e.g., 'Sandbox', 'Production')"
+                        },
+                        "days": {
+                            "type": "integer",
+                            "description": "Number of days to look back for costs. Default is 30.",
+                            "default": 30
+                        }
+                    },
+                    "required": ["tag_name", "tag_value"]
+                }
+            },
+            {
+                "name": "get_all_vms",
+                "description": "Get all virtual machines with detailed information including VM size, OS type, power state, and tags. Use when user asks about VMs, virtual machine inventory, or VM estate management.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_storage_accounts",
+                "description": "Get all storage accounts with security settings including public access, HTTPS, and private endpoints. Use when user asks about storage accounts or storage security.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_paas_without_private_endpoints",
+                "description": "Get PaaS resources (storage, SQL, Key Vault, Cosmos DB) that don't have private endpoints configured. Use for security assessment and private endpoint compliance checks.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_resources_with_public_access",
+                "description": "Get resources exposed to the public internet (storage with public blob access, SQL servers, public IPs, VMs). Use for security posture assessment.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_all_databases",
+                "description": "Get all database resources including SQL, Cosmos DB, PostgreSQL, and MySQL. Use when user asks about database inventory.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_resources_without_tags",
+                "description": "Get resources missing required tags (Environment, CostCenter, Owner). Use for tag compliance audits and governance checks.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_unused_resources",
+                "description": "Get potentially unused resources including orphaned disks, unattached public IPs, and deallocated VMs. Use for cost optimization and resource cleanup.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_tag_compliance_summary",
+                "description": "Get tag compliance statistics showing percentage of resources with required tags. Use when user asks about overall tag compliance or governance posture.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "get_multi_region_distribution",
+                "description": "Get resource distribution across Azure regions. Use when user asks about geographic distribution, multi-region deployment, or regional resource counts.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
             }
         ]
         
@@ -256,6 +369,21 @@ Response style:
 - **Context-Aware**: Consider business requirements, compliance needs, and operational feasibility
 - **Professional & Insightful**: Combine technical depth with business acumen for maximum impact
 
+Formatting Guidelines (CRITICAL):
+- **Use Markdown Tables**: When presenting lists of resources, VMs, costs, or structured data, ALWAYS format as markdown tables
+- **Table Structure**: Include clear headers, align columns, and ensure readability
+- **Comprehensive Coverage**: Include ALL requested fields in tables (name, size, location, cost, etc.)
+- **Grouping**: When data needs grouping (by environment, region, etc.), use clear section headers followed by tables
+- **Summary Statistics**: Always include summary sections with totals, distributions, and key metrics
+- **Professional Presentation**: Format data for executive presentation - clean, organized, and easy to scan
+
+Table Example Format:
+```
+| Resource Name | Type | Size | Location | State | Cost (30d) |
+|--------------|------|------|----------|-------|------------|
+| vm-prod-01   | VM   | D4s  | West US  | Running | $245.50 |
+```
+
 Always deliver insights that drive measurable business outcomes, significant cost savings, and strategic cloud optimization."""
     
     async def process_message(self, user_message: str, conversation_history: List[Dict[str, str]]) -> Tuple[str, List[Dict[str, str]]]:
@@ -286,8 +414,8 @@ Always deliver insights that drive measurable business outcomes, significant cos
                 messages=messages,
                 functions=self.functions,
                 function_call="auto",
-                temperature=0.9,  # Increased for more creative and insightful responses
-                max_tokens=4000  # Extended for comprehensive analysis
+                temperature=0.7,  # Balanced for accurate and insightful responses
+                max_tokens=8000  # Extended for comprehensive, well-formatted analysis with tables
             )
             
             response_message = response.choices[0].message
@@ -322,8 +450,8 @@ Always deliver insights that drive measurable business outcomes, significant cos
                 second_response = self.client.chat.completions.create(
                     model=self.deployment_name,
                     messages=messages,
-                    temperature=0.9,  # Increased for creative insights
-                    max_tokens=4000  # Extended for detailed analysis
+                    temperature=0.7,  # Balanced for accurate, well-formatted insights
+                    max_tokens=8000  # Extended for detailed, table-formatted analysis
                 )
                 
                 final_message = second_response.choices[0].message.content
@@ -436,8 +564,162 @@ Always deliver insights that drive measurable business outcomes, significant cos
             elif function_name == "get_key_vaults":
                 return self.resource_manager.get_key_vaults()
             
+            elif function_name == "get_resources_by_tag":
+                return self.resource_manager.get_resources_by_tag(
+                    tag_name=arguments.get("tag_name"),
+                    tag_value=arguments.get("tag_value")
+                )
+            
+            elif function_name == "get_resources_by_tag_with_costs":
+                return await self._get_resources_by_tag_with_costs(
+                    tag_name=arguments.get("tag_name"),
+                    tag_value=arguments.get("tag_value"),
+                    days=arguments.get("days", 30)
+                )
+            
+            elif function_name == "get_all_vms":
+                return self.resource_manager.get_all_vms()
+            
+            elif function_name == "get_storage_accounts":
+                return self.resource_manager.get_storage_accounts()
+            
+            elif function_name == "get_paas_without_private_endpoints":
+                return self.resource_manager.get_paas_without_private_endpoints()
+            
+            elif function_name == "get_resources_with_public_access":
+                return self.resource_manager.get_resources_with_public_access()
+            
+            elif function_name == "get_all_databases":
+                return self.resource_manager.get_all_databases()
+            
+            elif function_name == "get_resources_without_tags":
+                return self.resource_manager.get_resources_without_tags()
+            
+            elif function_name == "get_unused_resources":
+                return self.resource_manager.get_unused_resources()
+            
+            elif function_name == "get_tag_compliance_summary":
+                return self.resource_manager.get_tag_compliance_summary()
+            
+            elif function_name == "get_multi_region_distribution":
+                return self.resource_manager.get_multi_region_distribution()
+            
             else:
                 return {"error": f"Unknown function: {function_name}"}
                 
         except Exception as e:
             return {"error": f"Function execution failed: {str(e)}"}
+    
+    async def _get_resources_by_tag_with_costs(self, tag_name: str, tag_value: str, days: int = 30) -> Dict[str, Any]:
+        """
+        Get resources by tag and enrich with cost data
+        
+        Args:
+            tag_name: Tag name to filter by
+            tag_value: Tag value to filter by
+            days: Number of days to look back for costs
+            
+        Returns:
+            Dictionary with resources and their costs
+        """
+        try:
+            # Get resources by tag
+            resources_result = self.resource_manager.get_resources_by_tag(tag_name, tag_value)
+            
+            if "error" in resources_result:
+                return resources_result
+            
+            # Get cost data for the resources (request more records to ensure coverage)
+            cost_result = self.cost_manager.get_resource_costs(days=days, top=5000)
+            
+            # Debug logging
+            print(f"[DEBUG] Cost result keys: {cost_result.keys()}")
+            print(f"[DEBUG] Total cost in result: {cost_result.get('total_cost', 'N/A')}")
+            if "top_resources" in cost_result:
+                print(f"[DEBUG] Number of cost records: {len(cost_result['top_resources'])}")
+                costs_above_zero = [r for r in cost_result['top_resources'] if r.get('cost', 0) > 0]
+                print(f"[DEBUG] Cost records > $0: {len(costs_above_zero)}")
+                if len(costs_above_zero) > 0:
+                    print(f"[DEBUG] First 3 cost records with cost > $0:")
+                    for i, rec in enumerate(costs_above_zero[:3]):
+                        print(f"[DEBUG]   {i+1}. {rec.get('resource_name', 'N/A')}: ${rec.get('cost', 0):.2f}")
+            
+            # Create mappings: by resource ID (primary) and by resource name (fallback)
+            cost_map_by_id = {}
+            cost_map_by_name = {}
+            
+            if "top_resources" in cost_result:
+                for item in cost_result["top_resources"]:
+                    resource_id = item.get("resource_id", "").lower()
+                    resource_name = item.get("resource_name", "").lower()
+                    cost = float(item.get("cost", 0.0))
+                    
+                    # Map by full resource ID (most accurate)
+                    if resource_id:
+                        cost_map_by_id[resource_id] = cost
+                    
+                    # Also map by resource name (fallback for matching)
+                    if resource_name:
+                        if resource_name in cost_map_by_name:
+                            cost_map_by_name[resource_name] += cost
+                        else:
+                            cost_map_by_name[resource_name] = cost
+            
+            print(f"[DEBUG] Cost map by ID size: {len(cost_map_by_id)}")
+            print(f"[DEBUG] Cost map by name size: {len(cost_map_by_name)}")
+            
+            # Enrich resources with cost data
+            enriched_resources = []
+            total_cost = 0.0
+            resources_with_costs = 0
+            
+            print(f"[DEBUG] Starting resource enrichment. Total resources to enrich: {len(resources_result.get('data', []))}")
+            
+            if "data" in resources_result:
+                for idx, resource in enumerate(resources_result["data"]):
+                    resource_name = resource.get("name", "")
+                    resource_id = resource.get("id", "").lower()
+                    
+                    # Try to match by resource ID first (most accurate)
+                    resource_cost = cost_map_by_id.get(resource_id, 0.0)
+                    
+                    # If no match by ID, try by name
+                    if resource_cost == 0.0 and resource_name:
+                        resource_cost = cost_map_by_name.get(resource_name.lower(), 0.0)
+                    
+                    total_cost += resource_cost
+                    if resource_cost > 0:
+                        resources_with_costs += 1
+                    
+                    # Debug first 3 resources
+                    if idx < 3:
+                        print(f"[DEBUG] Resource {idx+1}: {resource_name}")
+                        print(f"[DEBUG]   ID: {resource_id}")
+                        print(f"[DEBUG]   Cost found: ${resource_cost:.2f}")
+                    
+                    enriched_resources.append({
+                        "name": resource_name,
+                        "type": resource.get("type", ""),
+                        "resourceGroup": resource.get("resourceGroup", ""),
+                        "location": resource.get("location", ""),
+                        "tags": resource.get("tags", {}),
+                        "id": resource.get("id", ""),
+                        "cost_last_{}_days".format(days): round(resource_cost, 2),
+                        "currency": "USD"
+                    })
+            
+            print(f"[DEBUG] Enrichment complete. Resources with costs > $0: {resources_with_costs}/{len(enriched_resources)}")
+            print(f"[DEBUG] Total cost: ${total_cost:.2f}")
+            
+            return {
+                "count": len(enriched_resources),
+                "resources_with_costs": resources_with_costs,
+                "total_cost": round(total_cost, 2),
+                "currency": "USD",
+                "period_days": days,
+                "filter": {"tag_name": tag_name, "tag_value": tag_value},
+                "resources": enriched_resources
+            }
+            
+        except Exception as e:
+            return {"error": f"Failed to get resources with costs: {str(e)}"}
